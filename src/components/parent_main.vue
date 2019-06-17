@@ -41,10 +41,11 @@
           <div class="col l9 candidate-details hide-on-med-and-down">
             <div class="row">
               <div class="candidate-video">
-                <main-video :interview-data="interviewData"></main-video>
+                <main-video :currentId ="currentID" :peerId="peer_id" @toggleArea="toggleArea" :interview-data="interviewData"></main-video>
+                <!--<code-share></code-share>-->
               </div>
               <div class="col s12" style="width: 100%">
-                <video-icons :interview-data="interviewData"></video-icons>
+                <video-icons @changeVideo="changeVideo" :interview-data="interviewData"></video-icons>
               </div>
             </div>
           </div>
@@ -100,6 +101,8 @@
         });
       });
       this.sf();
+
+
       //listener for connection and data
       peer.on('connection', function (conn) {
         console.log('connection established!');
@@ -127,7 +130,7 @@
         peer: null,
         peer_id: null,
         conn: null,
-        stream: null,
+        stream: null, // self Stream
         sstream: null,
         screen_streams: {},
         video_streams: {},
@@ -183,7 +186,7 @@
         },
         activeParticipants: [],
         connections: [],
-        mediaStream: {},
+        mediaStream: {}, // stream of other members
         call: [],
         receive: [],
         isSideNavOpened: false,
@@ -192,6 +195,44 @@
       }
     },
     methods: {
+      toggleArea: function(type){
+      var vm =this;
+        var elem = document.getElementById('global');
+        var smallElem = document.getElementById(vm.currentID);
+
+
+        if (type=='screen_streams'){
+          smallElem.srcObject = vm.screen_streams[vm.currentID];
+          elem.srcObject = vm.video_streams[vm.currentID]
+        }
+        else{
+          smallElem.srcObject = vm.video_streams[vm.currentID];
+
+          elem.srcObject = vm.screen_streams[vm.currentID]
+
+        }
+
+      },
+      changeVideo: function(account_id){
+        var vm=this;
+        this.currentID = account_id;
+        var element = document.getElementById('global');
+        console.log("screen_streams: ",vm.video_streams);
+        if (account_id === vm.peer_id){           // media stream of self is stored differently in this.stream
+          element.srcObject = vm.stream;
+        }
+        else {                                   // media streams of others are stored in this.screen_streams
+          if(vm.video_streams!=null){
+            if(vm.video_streams.hasOwnProperty(account_id)) {
+              element.srcObject = vm.video_streams[account_id];
+              console.log(element.srcObject);
+            }
+            else{
+              element.srcObject = null;
+            }
+          }
+        }
+      },
       sendchat: function (){
         var objDiv = document.getElementById("chatbox");
         objDiv.scrollTop = objDiv.scrollHeight * 10;
@@ -211,11 +252,12 @@
         objDiv.scrollTop = objDiv.scrollHeight * 10;
       },
       recievechat: function(){
+        var vm = this;
         var objDiv = document.getElementById("chatbox");
         objDiv.scrollTop = objDiv.scrollHeight * 10;
         var chatbox = document.getElementById('chatbox');
         var recieved = document.createElement("div");
-        recieved.innerText = "<span class='red-text'>" + vm.getPeerName(conn.peer) + ": </span>" + "<span style='font-size: 12px'>" + data + "</span>";
+        recieved.innerText = "<span class='red-text'>" + vm.getPeerName(vm.conn.peer) + ": </span>" + "<span style='font-size: 12px'>" + data + "</span>";
         recieved.classList.add('col');
         recieved.classList.add('s12');
         recieved.classList.add('left-align');
@@ -263,6 +305,7 @@
       muteVideo: function (account_id){
         var video = document.getElementById(account_id + 'video');
         (video.innerHTML == "videocam") ? video.innerHTML = "videocam_off" : video.innerHTML = "videocam";
+        // checking if accountId to be mute is self..
         if (account_id == this.peer_id) {
           var mediaStream = this.stream;
           mediaStream.getVideoTracks()[0].enabled = !mediaStream.getVideoTracks()[0].enabled;

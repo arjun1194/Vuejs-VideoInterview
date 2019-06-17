@@ -44,7 +44,7 @@
                 <main-video :interview-data="interviewData"></main-video>
               </div>
               <div class="col s12" style="width: 100%">
-                <video-icons :interview-data="interviewData"></video-icons>
+                <video-icons @changeVideo="changeVideo" :interview-data="interviewData"></video-icons>
               </div>
             </div>
           </div>
@@ -97,14 +97,21 @@
           var elem = document.getElementById(vm.peer_id);
           elem.srcObject = vm.stream;
           vm.currentID = vm.peer_id;
+          vm.$set(vm.video_streams, peer, vm.stream);
+          var main = document. getElementById('global');
+          main.srcObject = vm.stream;
+
         });
       });
       //listener for connection and data
       peer.on('connection', function (conn) {
         console.log('connection established!');
         this.conn = conn;
+        conn.on('close', function() {vm.chatAlert("has left the interview",conn)});
+
         conn.on('data', function (data) {
-          vm.recievechat(data);
+          console.log('recieve function is working ')
+          vm.recievechat(data,conn);
         })
       });
       //Listner for when user gets a call
@@ -186,10 +193,30 @@
         receive: [],
         isSideNavOpened: false,
         profilePhoto: "https://avatars1.githubusercontent.com/u/17480651?s=400&v=4",
-
       }
     },
     methods: {
+      changeVideo: function(account_id){
+        this.currentID=account_id;
+        console.log("current Id clicked= ",this.currentID);
+        var vm=this;
+        var element = document.getElementById('global');
+        console.log("screen_streams: ",vm.video_streams);
+        if (account_id === vm.peer_id){           // media stream of self is stored differently in this.stream
+              element.srcObject = vm.stream;
+        }
+        else {                                   // media streams of others are stored in this.screen_streams
+          if(vm.video_streams!=null){
+            if(vm.video_streams.hasOwnProperty(account_id)) {
+              element.srcObject = vm.video_streams[account_id];
+              console.log(element.srcObject);
+            }
+            else{
+              element.srcObject = null;
+            }
+          }
+        }
+      },
       sendchat: function (){
         var vm = this;
         console.log('working ')
@@ -203,7 +230,15 @@
         }
         var chatbox = document.getElementById('chatbox');
         var recieved = document.createElement("div");
-        recieved.innerHTML = "<span class='blue-text'>You: </span>" + "<span style='font-size: 12px'>" + input_text + "</span>";
+        var sentBy = document.createElement('span');
+        var sentText  = document.createElement('span');
+        sentText.style.fontSize = "12px";
+        sentText.innerText = input_text;
+        sentBy.innerText = "You: ";
+        sentBy.style.color = "red";
+
+        recieved.appendChild(sentBy);
+        recieved.appendChild(sentText);
         recieved.classList.add('col');
         recieved.classList.add('s12');
         recieved.classList.add('left-align');
@@ -211,18 +246,52 @@
         objDiv.scrollTop = objDiv.scrollHeight * 10;
       },
       recievechat: function(data,conn){
+
         var vm = this;
         var objDiv = document.getElementById("chatbox");
         objDiv.scrollTop = objDiv.scrollHeight * 10;
-        var chatbox = document.getElementById('chatbox');
         var recieved = document.createElement("div");
-        recieved.innerText = "<span class='red-text'>" + vm.getPeerName(conn.peer) + ": </span>" + "<span style='font-size: 12px'>" + data + "</span>";
+        var sentBy = document.createElement('span');
+        var sentText  = document.createElement('span');
+        sentText.style.fontSize = "12px";
+        sentText.innerText = data ;
+        sentBy.innerText = vm.getPeerName(conn.peer)+": " ;
+        sentBy.style.color = "blue";
+
+        recieved.appendChild(sentBy);
+        recieved.appendChild(sentText);
+
         recieved.classList.add('col');
         recieved.classList.add('s12');
         recieved.classList.add('left-align');
-        chatbox.appendChild(recieved);
+
+        objDiv.appendChild(recieved);
         objDiv.scrollTop = objDiv.scrollHeight * 10;
       },
+      chatAlert: function(data,conn){
+
+        var vm = this;
+        var objDiv = document.getElementById("chatbox");
+        objDiv.scrollTop = objDiv.scrollHeight * 10;
+        var recieved = document.createElement("div");
+        var sentBy = document.createElement('span');
+        var sentText  = document.createElement('span');
+        sentText.style.fontSize = "12px";
+        sentText.innerText = data ;
+        sentBy.innerText = vm.getPeerName(conn.peer)+" " ;
+        sentBy.style.color = "orange";
+
+        recieved.appendChild(sentBy);
+        recieved.appendChild(sentText);
+
+        recieved.classList.add('col');
+        recieved.classList.add('s12');
+        recieved.classList.add('center-align');
+
+        objDiv.appendChild(recieved);
+        objDiv.scrollTop = objDiv.scrollHeight * 10;
+      },
+
       getPeerName(peerid){
         var vm = this;
         var p = vm.interviewData.participants;
@@ -297,13 +366,12 @@
         let peer = this.peer;
         var anotherid = document.getElementById('another-id').value;
         var conn = peer.connect(anotherid);
-        conn.on('error', function(err) {console.log('YOU HAVE AN ERROR: ',err)});
         conn.on('open', function () {
           console.log('connection established!!');
           console.log(conn);
-          conn.on('close', function() {});
+          conn.on('close', function() {vm.chatAlert("has left the interview",conn)});
           conn.on('data', function (data) {
-              vm.sendMessage(data);
+              vm.recievechat(data,conn);
           })
         });
         // console.log(this.peer)
@@ -383,29 +451,9 @@
 
         })
       },
-      sendMessage:function(data){
-        var vm = this;
-        var objDiv = document.getElementById("chatbox");
-        objDiv.scrollTop = objDiv.scrollHeight * 10;
-        console.log(data);
-        var chatbox = document.getElementById('chatbox');
-        var recieved = document.createElement("div");
-        recieved.innerHTML = "<span class='red-text'>" + vm.getPeerName(conn.peer) + ": </span>" + "<span style='font-size: 12px'>" + data + "</span>";
-        recieved.classList.add('col');
-        recieved.classList.add('s12');
-        recieved.classList.add('left-align');
-        chatbox.appendChild(recieved);
-        objDiv.scrollTop = objDiv.scrollHeight * 10;
-      },
 
-    },watch: {
-        'screen_streams': function (to,from) {
-              console.log('to:',to,' from: ',from)
-        },
-      video_streams: function(val){
 
-      },
-    },
+    }
 
 
   }

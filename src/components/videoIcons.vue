@@ -32,15 +32,24 @@
       },
       methods:{
         videoIconCLick:function(account_id,index){
+          var vm = this;
           this.currentID=account_id;
-          this.currentIndex=index;
-          var element = document.getElementById('global');
-          if(this.screen_streams.hasOwnProperty(account_id)) {
-            element.srcObject = this.screen_streams[account_id];
-            console.log(element.srcObject);
-          }else{
-            element.srcObject = null;
-          }
+            this.currentIndex=index;
+
+            this.$emit('changeVideo',account_id)
+
+
+          // var element = document.getElementById('global');
+          // console.log("screen_streams: ",vm.screen_streams);
+          // if(vm.screen_streams!=null){
+          //   if(vm.screen_streams.hasOwnProperty(account_id)) {
+          //     element.srcObject = vm.screen_streams[account_id];
+          //     console.log(element.srcObject);
+          //   }else{
+          //     element.srcObject = null;
+          //   }
+          // }
+
         },
       },
     }

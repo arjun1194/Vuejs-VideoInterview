@@ -2,11 +2,11 @@
   <div class="col s12  center" style="position: relative">
     <div class="center" style="position:relative;">
             <span>
-                <span style="position:absolute;top:1%;margin-left:5px;color:white;
-                     background-color:rgba(0,0,0,0.8)">{{interviewData.participants[currentIndex].username}}'s Screen
-                </span>
+                <!--<span style="position:absolute;top:1%;margin-left:5px;color:white;-->
+                     <!--background-color:rgba(0,0,0,0.8)">{{interviewData.participants[currentIndex].username}}'s Screen-->
+                <!--</span>-->
               <video id="global" autoplay class="video-webcam grey"></video>
-              <i class="material-icons white-text " @click="switchScreen" style="position:absolute;top:1%;right:6% ; background:rgba(0,0,0,0.8)">search</i>
+              <i class="material-icons white-text"  v-if="peerId!==currentId" @click="switchScreen" style="position:absolute;top:1%;right:6% ; background:rgba(0,0,0,0.8)">search</i>
               <i class="material-icons white-text " @click="requestFullScreen" style="position:absolute;top:1%;right:1% ; background:rgba(0,0,0,0.8)">fullscreen</i>
             </span>
     </div>
@@ -19,13 +19,19 @@
       data(){
           return{
             isVideo:true,
-            currentID:1,
-            currentIndex:0,
-            screen_streams:{},
-            video_streams:{},
+            // currentID:null,
+            // currentIndex:0,
+            // screen_streams:{},
+            // video_streams:{},
           }
       },
       props:{
+          peerId:{
+            required:true
+          },
+          currentId:{
+            required:true
+          },
           interviewData:{
             required:true
           },
@@ -36,18 +42,24 @@
           videoEl.requestFullscreen();
         },
         switchScreen:function(){
+
           var vm = this;
           vm.isVideo = !vm.isVideo;
+
+
           if(vm.isVideo){
-            var elem = document.getElementById('global');
-            var smallElem = document.getElementById(vm.currentID);
-            elem.srcObject = vm.video_streams[vm.currentID];
-            smallElem.srcObject = vm.screen_streams[vm.currentID];
+            // var elem = document.getElementById('global');
+            // var smallElem = document.getElementById(vm.currentID);
+            // elem.srcObject = vm.video_streams[vm.currentID];
+            // smallElem.srcObject = vm.screen_streams[vm.currentID];
+
+            this.$emit('toggleArea','screen_streams');
           }else{
-            var elem = document.getElementById('global');
-            var smallElem = document.getElementById(vm.currentID);
-            elem.srcObject = vm.screen_streams[vm.currentID];
-            smallElem.srcObject = vm.video_streams[vm.currentID];
+            // var elem = document.getElementById('global');
+            // var smallElem = document.getElementById(vm.currentID);
+            // elem.srcObject = vm.screen_streams[vm.currentID];
+            // smallElem.srcObject = vm.video_streams[vm.currentID];
+            this.$emit('toggleArea','video_streams');
           }
 
         },
